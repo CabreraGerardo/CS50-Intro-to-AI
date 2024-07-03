@@ -62,10 +62,10 @@ def main():
     load_data(directory)
     print("Data loaded.")
 
-    source = person_id_for_name("Jennifer Lawrence") #person_id_for_name(input("Name: "))
+    source = person_id_for_name(input("Name: "))
     if source is None:
         sys.exit("Person not found.")
-    target = person_id_for_name("Tom Hanks") #person_id_for_name(input("Name: "))
+    target = person_id_for_name(input("Name: "))
     if target is None:
         sys.exit("Person not found.")
 
@@ -94,26 +94,28 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    depthLimit = 6
+    # Store explored people to avoid infinite loops
     exploredPeople = set()
 
-    # Initialize frontier to just the starting position
+    # Initialize frontier with the source person
     start = Node(state=source, parent=None, action=None)
     frontier = StackFrontier()
     frontier.add(start)
 
-    # Keep looping until solution found
+    # Infinite loop until theres a return (solution)
     while True:
-        # If nothing left in frontier, then no path
+
+        # If the frontier is empty, it means that there are no options left, and no path
         if frontier.empty():
-            raise Exception("no solution")
+            return None
         
-        # Choose a node from the frontier
+        # Get node from frontier and remove it
         node = frontier.remove()
 
         # If node is the goal, then we have a solution
         if node.state == target:
             personMovies = []
+            # Loop while node has parents (Not root node)
             while node.parent is not None:
                 personMovies.append((node.action, node.state))
                 node = node.parent
