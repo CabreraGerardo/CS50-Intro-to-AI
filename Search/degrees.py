@@ -62,12 +62,14 @@ def main():
     load_data(directory)
     print("Data loaded.")
 
-    source = person_id_for_name(input("Name: "))
+    source = person_id_for_name("Jennifer Lawrence") #person_id_for_name(input("Name: "))
     if source is None:
         sys.exit("Person not found.")
-    target = person_id_for_name(input("Name: "))
+    target = person_id_for_name("Tom Hanks") #person_id_for_name(input("Name: "))
     if target is None:
         sys.exit("Person not found.")
+
+    print(source, target)
 
     path = shortest_path(source, target)
 
@@ -92,8 +94,40 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    raise NotImplementedError
+    depthLimit = 6
+    exploredPeople = set()
+
+    # Initialize frontier to just the starting position
+    start = Node(state=source, parent=None, action=None)
+    frontier = StackFrontier()
+    frontier.add(start)
+
+    # Keep looping until solution found
+    while True:
+        # If nothing left in frontier, then no path
+        if frontier.empty():
+            raise Exception("no solution")
+        
+        # Choose a node from the frontier
+        node = frontier.remove()
+
+        # If node is the goal, then we have a solution
+        if node.state == target:
+            personMovies = []
+            while node.parent is not None:
+                personMovies.append((node.action, node.state))
+                node = node.parent
+            personMovies.reverse()
+            return personMovies
+
+        # Mark node as explored
+        exploredPeople.add(node.state)
+
+        # Add neighbors to frontier
+        for action, state in neighbors_for_person(node.state):
+            if not frontier.contains_state(state) and state not in exploredPeople:
+                child = Node(state=state, parent=node, action=action)
+                frontier.add(child)
 
 
 def person_id_for_name(name):
