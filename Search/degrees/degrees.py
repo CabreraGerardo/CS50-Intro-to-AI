@@ -69,8 +69,7 @@ def main():
     if target is None:
         sys.exit("Person not found.")
 
-    print(source, target)
-
+    print("Looking for path...")
     path = shortest_path(source, target)
 
     if path is None:
@@ -94,8 +93,9 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # Store explored people to avoid infinite loops
+    # Store explored people ad movies to avoid infinite loops or extra checks
     exploredPeople = set()
+    exploredMovies = set()
 
     # Initialize frontier with the source person
     start = Node(state=source, parent=None, action=None)
@@ -122,12 +122,15 @@ def shortest_path(source, target):
             personMovies.reverse()
             return personMovies
 
-        # Mark node as explored
+        # Mark person as explored
         exploredPeople.add(node.state)
+        # Mark movie as explored
+        if node.action is not None:
+            exploredMovies.add(node.action)
 
         # Add neighbors to frontier
         for action, state in neighbors_for_person(node.state):
-            if not frontier.contains_state(state) and state not in exploredPeople:
+            if not frontier.contains_state(state) and state not in exploredPeople and action not in exploredMovies:
                 child = Node(state=state, parent=node, action=action)
                 frontier.add(child)
 
