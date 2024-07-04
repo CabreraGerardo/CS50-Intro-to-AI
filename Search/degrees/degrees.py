@@ -95,12 +95,14 @@ def shortest_path(source, target):
 
     # Store explored people ad movies to avoid infinite loops or extra checks
     exploredPeople = set()
-    exploredMovies = set()
 
     # Initialize frontier with the source person
     start = Node(state=source, parent=None, action=None)
     frontier = StackFrontier()
     frontier.add(start)
+
+    if source == target:
+        return []
 
     # Infinite loop until theres a return (solution)
     while True:
@@ -112,25 +114,21 @@ def shortest_path(source, target):
         # Get node from frontier and remove it
         node = frontier.remove()
 
-        # If node is the goal, then we have a solution
-        if node.state == target:
-            personMovies = []
-            # Loop while node has parents (Not root node)
-            while node.parent is not None:
-                personMovies.append((node.action, node.state))
-                node = node.parent
-            personMovies.reverse()
-            return personMovies
-
         # Mark person as explored
         exploredPeople.add(node.state)
-        # Mark movie as explored
-        if node.action is not None:
-            exploredMovies.add(node.action)
 
         # Add neighbors to frontier
         for action, state in neighbors_for_person(node.state):
-            if not frontier.contains_state(state) and state not in exploredPeople and action not in exploredMovies:
+            # If node is the goal, then we have a solution, return it directly
+            if state == target:
+                personMovies = [(action, state)]
+                # Loop while node has parents (Not root node)
+                while node.parent is not None:
+                    personMovies.append((node.action, node.state))
+                    node = node.parent
+                personMovies.reverse()
+                return personMovies
+            elif not frontier.contains_state(state) and state not in exploredPeople:
                 child = Node(state=state, parent=node, action=action)
                 frontier.add(child)
 
