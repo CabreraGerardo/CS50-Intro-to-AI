@@ -82,9 +82,9 @@ def checkHorizontaly(board, player):
             return True;
     
 def checkVerticaly(board, player):
-    for row in range(3):      
+    for col in range(3):      
         count = 0;   
-        for col in range(3):
+        for row in range(3):
             if board[row][col] is player:
                 count += 1            
             if count == 3: return True
@@ -151,7 +151,7 @@ def minimax(board):
     if terminal(board): return None
 
     boardCopy = copy.deepcopy(board)
-    wantedValue = -1 if player(boardCopy) else 1
+    wantedValue = 1 if player(boardCopy) else -1
 
     possActions = actions(boardCopy)
     for action in possActions:
