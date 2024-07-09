@@ -41,8 +41,8 @@ def actions(board):
     """
     actions = set()
     for rowIdx, row in enumerate(board):
-       for colIdx, val in enumerate(row):
-           if val is EMPTY: actions.add((rowIdx, colIdx))
+       for colIdx, cell in enumerate(row):
+           if cell is EMPTY: actions.add((rowIdx, colIdx))
 
     return actions
 
@@ -52,12 +52,16 @@ def result(board, action):
     Returns the board that results from making move (i, j) on the board.
     """
     try:
-        if board[action[0]][action[1]] is not EMPTY:
+        copyBoard = copy.deepcopy(board)
+        
+        if copyBoard[action[0]][action[1]] is not EMPTY:
+            raise NameError("Action not valid")
+        if action[0] > len(copyBoard) or action[1] > len(copyBoard[0]) or action[0] < 0 or action[1] < 0:
             raise NameError("Action not valid")
         
-        board[action[0]][action[1]] = player(board);
+        copyBoard[action[0]][action[1]] = player(copyBoard);
         
-        return board
+        return copyBoard
     except:
         raise NameError("Action not valid")
 
@@ -149,28 +153,54 @@ def minimax(board):
     Returns the optimal action for the current player on the board.
     """
     if terminal(board): return None
-
-    boardCopy = copy.deepcopy(board)
-    wantedValue = 1 if player(boardCopy) else -1
-
-    possActions = actions(boardCopy)
-    for action in possActions:
-        movedBoard = result(boardCopy, action)
-        if checkActionPath(movedBoard) is wantedValue:
-            return action
     
-    return next(iter(possActions))
-
-def checkActionPath(board):
-    boardCopy = copy.deepcopy(board)
-    for action in actions(boardCopy):
-        movedBoard = result(boardCopy, action)
-        if not terminal(movedBoard):
-            return checkActionPath(movedBoard)
-        else:
-            return utility(movedBoard)
+    if player(board) is X:
+        return maxVal(board)["action"]
+    else:
+        return minVal(board)["action"]
         
-
+def maxVal(board):
+    if terminal(board):
+        return { "value": utility(board) }
     
-        
+    currVal = -(math.inf)
+    
+    bestMove = None
+    for action in actions(board):
+        minValue = minVal(result(board, action))
+        '''
+            Not using "max" because we need to store the best action when
+            the new value is bigger than the currently stored (Better move)
+        '''
+        if minValue["value"] > currVal:
+            currVal = minValue["value"]
+            bestMove = action
+            # If the new value is the max score, return directly so its faster
+            if currVal == 1:
+                return { "value": currVal, "action": action }
+    
+    # If it hasnt returned anything, return the current better move
+    return { "value": currVal, "action": bestMove }
 
+def minVal(board):
+    if terminal(board):
+        return { "value": utility(board) }
+    
+    currVal = math.inf
+    
+    bestMove = None
+    for action in actions(board):
+        maxValue = maxVal(result(board, action))
+        '''
+            Not using "min" because we need to store the best action when
+            the new value is lower than the currently stored (Better move)
+        '''
+        if maxValue["value"] < currVal:
+            currVal = maxValue["value"]
+            bestMove = action
+            # If the new value is the min score, return directly so its faster
+            if currVal == -1:
+                return { "value": currVal, "action": action }
+    
+    # If it hasnt returned anything, return the current better move
+    return { "value": currVal, "action": bestMove }
