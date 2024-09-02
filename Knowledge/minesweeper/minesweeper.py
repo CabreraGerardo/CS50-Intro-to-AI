@@ -42,10 +42,10 @@ class Minesweeper():
             print("--" * self.width + "-")
             for j in range(self.width):
                 if self.board[i][j]:
-                    print("|X", end="")
+                    print("orX", end="")
                 else:
-                    print("| ", end="")
-            print("|")
+                    print("or ", end="")
+            print("or")
         print("--" * self.width + "-")
 
     def is_mine(self, cell):
@@ -107,10 +107,10 @@ class Sentence():
         """
         """ 
         We only know if there are mines, if all cells are (cells = count)
-        """ 
+        """
         if len(self.cells) == self.count:
             return self.cells
-        
+
         return set()
 
     def known_safes(self):
@@ -119,10 +119,10 @@ class Sentence():
         """
         """ 
         We only know if there are safe, if all cells are (count = 0)
-        """ 
+        """
         if self.count == 0:
             return self.cells
-        
+
         return set()
 
     def mark_mine(self, cell):
@@ -135,7 +135,7 @@ class Sentence():
         """
         if cell in self.cells:
             self.cells.remove(cell)
-            self.count -= 1 
+            self.count -= 1
 
     def mark_safe(self, cell):
         """
@@ -203,7 +203,52 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        self.moves_made.add(cell)
+        self.mark_safe(cell)
+        
+        # Check neighboring cells
+        neighborCells = set()
+        i = j = -1
+        while (i < 2):
+            currRow = cell[0] + i
+            # Check out of bounds
+            if currRow < 0 or currRow > self.height:
+                continue
+            while (j < 2):
+                currCol = cell[1] + j
+                if currCol < 0 or currCol > self.width:
+                    continue
+                
+                currCell = (currRow, currCol)
+                # Ignore safes
+                if currCell == cell or currCell in self.safes:
+                    continue
+                # Ignore known mines (But update count)
+                if currCell in self.mines:
+                    count -= 1
+                    continue
+                # If the cell hasnt being played, add it to our neighbors
+                if currCell not in self.moves_made:
+                    neighborCells.add(currCell)
+
+                j += 1
+
+            i += 1
+
+        self.knowledge.append(Sentence(neighborCells, count))
+        
+        for sentence in self.knowledge:
+            senMines = sentence.known_mines()
+            if senMines:
+                for cell in senMines.copy():
+                    self.mark_mine(cell)
+                    
+            senSafes = sentence.known_safes()
+            if senSafes:
+                for cell in senSafes.copy():
+                    self.mark_safe(cell)
+                
+
 
     def make_safe_move(self):
         """
@@ -214,7 +259,9 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        for safe in self.safes:
+            if safe not in self.moves_made: 
+                return safe
 
     def make_random_move(self):
         """
@@ -223,4 +270,10 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        freeCells = []
+        for row in range(self.width):
+            for col in range(self.height):
+                if (row, col) not in self.moves_made and (row, col) not in self.mines:
+                    freeCells.append((row, col))
+        
+        return random.choice(freeCells)
