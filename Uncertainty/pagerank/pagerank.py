@@ -57,7 +57,19 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    model = {}
+    pageLinks = corpus[page]
+    if len(pageLinks):
+        remainingProbability = 1 - damping_factor
+        randomProbability = remainingProbability / len(corpus)
+        dampingProbability = damping_factor / len(pageLinks)
+        for possiblePage in corpus:
+            if possiblePage in pageLinks:
+                model[possiblePage] = dampingProbability + randomProbability
+            else:
+                model[possiblePage] = randomProbability
+
+    return model
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +81,22 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    timesOnPage = {}
+    currentPage = random.choice([*corpus.keys()])
+    for i in range(n):
+        model = transition_model(corpus, currentPage, damping_factor)
+        currentPage = random.choices([*model.keys()], [*model.values()])
+        if currentPage in timesOnPage:
+            timesOnPage[currentPage] += 1
+        else:
+            timesOnPage[currentPage] = 0
+
+    numberOfPages = len(corpus)
+    pagerank = {}
+    for page in timesOnPage:
+        pagerank[page] = timesOnPage[page] / numberOfPages
+
+    return pagerank
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +108,28 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    numberOfPages = len(corpus)
+    dampingProb = (1 - damping_factor) / numberOfPages
+    pagerank = {}
+
+    changeDiffs = {}
+
+    while all(i <= .001 for i in [*changeDiffs.values()]):
+        for currPage in corpus:
+            sumOfLinksToCurrent = 0
+
+            """ Pages linking to current one """
+            linkPages = {}
+            for page in corpus:
+                if currPage in page:
+                    linkPages.add(currPage)
+
+            for linkPage in linkPages:
+                sumOfLinksToCurrent += pagerank[page] / len(linkPages)
+
+            pagerank[currPage] = dampingProb + sumOfLinksToCurrent
+
+    return pagerank
 
 
 if __name__ == "__main__":
