@@ -59,15 +59,21 @@ def transition_model(corpus, page, damping_factor):
     """
     model = {}
     pageLinks = corpus[page]
-    if len(pageLinks):
-        remainingProbability = 1 - damping_factor
-        randomProbability = remainingProbability / len(corpus)
-        dampingProbability = damping_factor / len(pageLinks)
-        for possiblePage in corpus:
-            if possiblePage in pageLinks:
-                model[possiblePage] = dampingProbability + randomProbability
-            else:
-                model[possiblePage] = randomProbability
+
+    # Calculate the probabilities
+    remainingProbability = 1 - damping_factor
+    randomProbability = remainingProbability / len(corpus)
+    dampingProbability = (damping_factor / len(pageLinks)
+                          ) if len(pageLinks) else 0
+
+    # Loop through pages
+    for possiblePage in corpus:
+        # If the page is linked by the param sum the probabilities
+        if possiblePage in pageLinks:
+            model[possiblePage] = dampingProbability + randomProbability
+        else:
+            # If not only use the random one
+            model[possiblePage] = randomProbability
 
     return model
 
@@ -82,19 +88,25 @@ def sample_pagerank(corpus, damping_factor, n):
     PageRank values should sum to 1.
     """
     timesOnPage = {}
+    # Set a random page as a starter
     currentPage = random.choice([*corpus.keys()])
+
     for i in range(n):
+        # Get the model for the specific page
         model = transition_model(corpus, currentPage, damping_factor)
-        currentPage = random.choices([*model.keys()], [*model.values()])
+        # Get a new page based on the transition model
+        currentPage = random.choices([*model.keys()], [*model.values()])[0]
+
+        # Store the number of times each page has been visited
         if currentPage in timesOnPage:
             timesOnPage[currentPage] += 1
         else:
-            timesOnPage[currentPage] = 0
+            timesOnPage[currentPage] = 1
 
-    numberOfPages = len(corpus)
     pagerank = {}
+    # Calculate PRs
     for page in timesOnPage:
-        pagerank[page] = timesOnPage[page] / numberOfPages
+        pagerank[page] = timesOnPage[page] / n
 
     return pagerank
 
@@ -110,24 +122,40 @@ def iterate_pagerank(corpus, damping_factor):
     """
     numberOfPages = len(corpus)
     dampingProb = (1 - damping_factor) / numberOfPages
-    pagerank = {}
 
+    defaultPageRankVal = 1 / numberOfPages
+    pagerank = dict.fromkeys(corpus.keys(), defaultPageRankVal)
+
+    keepLooping = True
+    # Store differences
     changeDiffs = {}
 
-    while all(i <= .001 for i in [*changeDiffs.values()]):
-        for currPage in corpus:
+    while keepLooping:
+        keepLooping = False
+
+        # Loop all pages to calculate PR
+        for currPageName in corpus:
             sumOfLinksToCurrent = 0
 
-            """ Pages linking to current one """
-            linkPages = {}
-            for page in corpus:
-                if currPage in page:
-                    linkPages.add(currPage)
+            # Loop again to check if the currPage is being linked by another
+            for pageName in corpus:
+                # If the page has no links, asusme is linking to this one (And set the number of links as the total one for the corpus)
+                if len(corpus[pageName]) == 0:
+                    sumOfLinksToCurrent += pagerank[pageName] / numberOfPages
+                elif currPageName in corpus[pageName]:
+                    sumOfLinksToCurrent += pagerank[pageName] / \
+                        len(corpus[pageName])
 
-            for linkPage in linkPages:
-                sumOfLinksToCurrent += pagerank[page] / len(linkPages)
+            # Calculate new PR
+            newPagerank = dampingProb + (damping_factor * sumOfLinksToCurrent)
 
-            pagerank[currPage] = dampingProb + sumOfLinksToCurrent
+            # Save the diff
+            changeDiffs[currPageName] = abs(
+                newPagerank - pagerank[currPageName])
+            # Check if theres any diff bigger than 0.001
+            keepLooping = any(diff > 0.001 for diff in changeDiffs.values())
+            # Save the PR
+            pagerank[currPageName] = newPagerank
 
     return pagerank
 
